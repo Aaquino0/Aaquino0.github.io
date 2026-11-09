@@ -258,6 +258,22 @@ main{overflow-x:clip}
 /* revelação: estado inicial só com JS + motion */
 .js .rv{opacity:0; transform:translateY(28px)}
 
+
+/* ---------- cursor próprio (só mouse) ---------- */
+.has-cursor, .has-cursor a, .has-cursor button{cursor:none}
+#trail{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:95}
+.c-dot,.c-ring{position:fixed; left:0; top:0; pointer-events:none; z-index:96; border-radius:50%; opacity:0; transition:opacity .3s}
+.c-dot{width:8px; height:8px; margin:-4px 0 0 -4px; background:var(--mint); box-shadow:0 0 12px var(--mint), 0 0 2px #fff}
+.c-ring{width:38px; height:38px; margin:-19px 0 0 -19px; border:1.5px solid rgba(185,162,255,.7);
+  display:grid; place-items:center; transition:opacity .3s, width .35s var(--ease-out), height .35s var(--ease-out), margin .35s var(--ease-out), background-color .35s, border-color .35s}
+.c-ring span{font-size:.68rem; font-weight:800; letter-spacing:.02em; color:var(--night); opacity:0; transition:opacity .2s}
+.cursor-on .c-dot,.cursor-on .c-ring{opacity:1}
+.c-ring.link{width:64px; height:64px; margin:-32px 0 0 -32px; background:rgba(94,234,212,.12); border-color:var(--mint)}
+.c-ring.view{width:84px; height:84px; margin:-42px 0 0 -42px; background:var(--mint); border-color:var(--mint)}
+.c-ring.view span{opacity:1}
+.c-ring.down{width:28px; height:28px; margin:-14px 0 0 -14px}
+.c-dot.hide{opacity:0 !important}
+
 /* ---------- responsivo ---------- */
 @media (max-width:980px){
   .hero-grid{grid-template-columns:1fr; gap:40px; padding-top:110px}
@@ -298,6 +314,9 @@ main{overflow-x:clip}
 <body>
 <a class="skip" href="#projetos">Pular para os projetos</a>
 <div class="progress" aria-hidden="true"></div>
+<canvas id="trail" aria-hidden="true" hidden></canvas>
+<div class="c-ring" aria-hidden="true" hidden><span>ver</span></div>
+<div class="c-dot" aria-hidden="true" hidden></div>
 
 <nav class="nav" aria-label="Seções">
   <a class="brand" href="#topo">AA</a>
@@ -618,6 +637,66 @@ function orbit(now){
 }
 requestAnimationFrame(orbit);
 if (fine) hero.addEventListener('pointermove', e => { const r = hero.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5; mxT = px; tiltT = -10 + py * 14; });
+
+/* ---------- cursor: pacote de dados com rastro ---------- */
+if (fine && !reduce){
+  const tc = document.getElementById('trail'), tx = tc.getContext('2d');
+  const dot = document.querySelector('.c-dot'), ring = document.querySelector('.c-ring'), ringTxt = ring.querySelector('span');
+  [tc, dot, ring].forEach(el => el.hidden = false);
+  document.documentElement.classList.add('has-cursor');
+  let tw, th, tdpr; const pts = [], bursts = [];
+  const tsize = () => { tdpr = Math.min(devicePixelRatio||1, 2); tw = innerWidth; th = innerHeight; tc.width = tw*tdpr; tc.height = th*tdpr; tx.setTransform(tdpr,0,0,tdpr,0,0); };
+  tsize(); addEventListener('resize', tsize);
+  let x = -100, y = -100, rx = -100, ry = -100;
+  addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    x = e.clientX; y = e.clientY; document.documentElement.classList.add('cursor-on');
+    pts.push({x, y, t: performance.now()});
+  }, {passive:true});
+  document.addEventListener('pointerleave', () => document.documentElement.classList.remove('cursor-on'));
+  addEventListener('blur', () => document.documentElement.classList.remove('cursor-on'));
+  addEventListener('pointerdown', e => { ring.classList.add('down'); bursts.push({x:e.clientX, y:e.clientY, t:performance.now()}); });
+  addEventListener('pointerup', () => ring.classList.remove('down'));
+  document.addEventListener('pointerover', e => {
+    const t = e.target.closest('a, button, .tilt');
+    ring.classList.toggle('view', !!t && t.classList.contains('tilt'));
+    ring.classList.toggle('link', !!t && !t.classList.contains('tilt'));
+    dot.classList.toggle('hide', !!t && t.classList.contains('tilt'));
+  });
+  const LIFE = 420;
+  (function loop(now){
+    rx += (x - rx) * .2; ry += (y - ry) * .2;
+    dot.style.transform = `translate3d(${x}px,${y}px,0)`;
+    ring.style.transform = `translate3d(${rx}px,${ry}px,0)`;
+    while (pts.length && now - pts[0].t > LIFE) pts.shift();
+    tx.clearRect(0,0,tw,th);
+    tx.lineCap = 'round'; tx.lineJoin = 'round';
+    for (let i = 1; i < pts.length; i++){
+      const a = pts[i-1], b = pts[i], k = 1 - (now - b.t) / LIFE;
+      if (k <= 0) continue;
+      const mix = i / pts.length;
+      tx.strokeStyle = `rgba(${Math.round(139 + (94-139)*mix)},${Math.round(92 + (234-92)*mix)},${Math.round(246 + (212-246)*mix)},${(k*.85).toFixed(3)})`;
+      tx.lineWidth = 1 + k * 5;
+      tx.shadowColor = 'rgba(94,234,212,.6)'; tx.shadowBlur = 10 * k;
+      tx.beginPath(); tx.moveTo(a.x, a.y); tx.lineTo(b.x, b.y); tx.stroke();
+      if (i % 7 === 0){ tx.fillStyle = `rgba(243,240,250,${(k*.9).toFixed(3)})`; tx.beginPath(); tx.arc(b.x, b.y, 1.6 + k*1.6, 0, 7); tx.fill(); }
+    }
+    tx.shadowBlur = 0;
+    for (let i = bursts.length - 1; i >= 0; i--){
+      const bu = bursts[i], p = (now - bu.t) / 650;
+      if (p >= 1){ bursts.splice(i,1); continue; }
+      const e = 1 - Math.pow(1 - p, 3);
+      tx.strokeStyle = `rgba(94,234,212,${(1-p)*.8})`; tx.lineWidth = 2;
+      tx.beginPath(); tx.arc(bu.x, bu.y, 6 + e*46, 0, 7); tx.stroke();
+      for (let k2 = 0; k2 < 8; k2++){
+        const ang = k2 * Math.PI / 4, r = 10 + e*40;
+        tx.fillStyle = `rgba(185,162,255,${(1-p)*.9})`;
+        tx.beginPath(); tx.arc(bu.x + Math.cos(ang)*r, bu.y + Math.sin(ang)*r, 2*(1-p)+.5, 0, 7); tx.fill();
+      }
+    }
+    requestAnimationFrame(loop);
+  })(performance.now());
+}
 
 /* ---------- demo 1: WhatsApp ---------- */
 const wa = document.getElementById('wa'), sheet = document.getElementById('sheet'), sheetTxt = document.getElementById('sheet-txt');
