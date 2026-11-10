@@ -267,6 +267,21 @@ main{overflow-x:clip}
 .c-blob.down i{transform:scale(.82)}
 .cursor-on .c-blob{opacity:1}
 
+
+/* ---------- certificados ---------- */
+.certs{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+.cert{display:flex; flex-direction:column; gap:6px; padding:20px 20px 16px; border-radius:20px; background:var(--panel); border:1px solid var(--line); transition:border-color .3s, transform .4s var(--ease-out)}
+.cert:hover{border-color:rgba(94,234,212,.5); transform:translateY(-3px)}
+.cert.off{display:none}
+.cert-iss{font-size:.82rem; color:var(--muted)}
+.cert b{font-size:1rem; line-height:1.35}
+.cert-foot{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:auto; padding-top:10px}
+.cert-date{font-size:.8rem; color:var(--muted)}
+.cert-link{display:inline-flex; align-items:center; gap:4px; font-size:.85rem; font-weight:700; color:var(--mint); text-decoration:none; margin-left:auto}
+.cert-link:hover{text-decoration:underline}
+@media (max-width:980px){ .certs{grid-template-columns:1fr 1fr} }
+@media (max-width:600px){ .certs{grid-template-columns:1fr} }
+
 /* ---------- responsivo ---------- */
 @media (max-width:980px){
   .hero-grid{grid-template-columns:1fr; gap:40px; padding-top:110px}
@@ -517,6 +532,33 @@ main{overflow-x:clip}
   </div>
 </section>
 
+<section id="certificados">
+  <div class="wrap sec-head">
+    <h2 class="rv">Certificados</h2>
+    <p class="rv">Cursos e capacitações concluídos, com link para conferir as credenciais.</p>
+  </div>
+  <div class="wrap">
+    <div class="skill-tabs cert-tabs rv" role="group" aria-label="Filtrar certificados">
+      <button class="seg" data-cf="all" aria-pressed="true">Todos</button>
+      <button class="seg" data-cf="dados" aria-pressed="false">Dados e Python</button>
+      <button class="seg" data-cf="front" aria-pressed="false">Front-end e UX</button>
+      <button class="seg" data-cf="sis" aria-pressed="false">Sistemas</button>
+    </div>
+    <ul class="certs rv">
+      <li class="cert" data-cat="dados"><span class="cert-iss">University of Michigan, via Coursera</span><b>Python Basics</b><div class="cert-foot"><span class="cert-date">ago. 2026</span><a class="cert-link" href="https://coursera.org/verify/19WNWRYSM1MM" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="dados"><span class="cert-iss">University of Michigan, via Coursera</span><b>Data Collection and Processing with Python</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/Q41AP3ONB1XG" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="dados"><span class="cert-iss">Alura, bolsa Santander Open Academy</span><b>Power BI (trilha)</b><div class="cert-foot"><span class="cert-date">jun. 2026</span><a class="cert-link" href="https://cursos.alura.com.br/degree/certificate/2e818b65-c3ea-4880-9b2e-d92df32e6387" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="dados"><span class="cert-iss">Universidade Ceuma, TechX</span><b>Machine Learning Dev, Top 5</b><div class="cert-foot"><span class="cert-date">jul. 2026</span><a class="cert-link" href="http://badges.com.br/share/fcc6c4b51368c2d2f58cf76d16b34869.php" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="front"><span class="cert-iss">IBM, via Coursera</span><b>Introduction to HTML, CSS & JavaScript</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/49P9C7NVESFT" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="front"><span class="cert-iss">University of California, Davis, via Coursera</span><b>JavaScript Basics</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/UGDXI5QMYIBN" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="front"><span class="cert-iss">Scrimba, via Coursera</span><b>Learn Tailwind CSS</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/AC6SF4QYHUMZ" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="front"><span class="cert-iss">Universidade de São Paulo, via Coursera</span><b>UX / UI: Fundamentos para o design de interface</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/8OOS17ARL5KD" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="front"><span class="cert-iss">Google, via Coursera</span><b>Create High-Fidelity Designs and Prototypes in Figma</b><div class="cert-foot"><span class="cert-date">set. 2026</span><a class="cert-link" href="https://coursera.org/verify/GU5O86GK29SJ" target="_blank" rel="noopener">Ver credencial<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></li>
+      <li class="cert" data-cat="sis"><span class="cert-iss">Rubeus Academy, 13 horas</span><b>Capacitação plataforma Rubeus</b><div class="cert-foot"></div></li>
+    </ul>
+  </div>
+</section>
+
 <section id="contato" class="wrap contact">
   <div class="contact-grid">
     <div>
@@ -738,6 +780,15 @@ function setSk(k){
 }
 document.querySelectorAll('[data-sk]').forEach(b => b.addEventListener('click', () => setSk(b.dataset.sk)));
 setSk('auto');
+
+/* ---------- filtro de certificados ---------- */
+document.querySelectorAll('[data-cf]').forEach(b => b.addEventListener('click', () => {
+  const c = b.dataset.cf;
+  document.querySelectorAll('[data-cf]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  const shown = [];
+  document.querySelectorAll('.cert').forEach(el => { const on = c === 'all' || el.dataset.cat === c; el.classList.toggle('off', !on); if (on) shown.push(el); });
+  if (hasGsap && !reduce) gsap.from(shown, {y:12, opacity:0, duration:.35, stagger:.04, ease:'power2.out'});
+}));
 
 /* ---------- navegação ativa ---------- */
 const navLinks = [...document.querySelectorAll('.nav a[data-sec]')];
