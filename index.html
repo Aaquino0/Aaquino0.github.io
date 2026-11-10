@@ -213,6 +213,7 @@ section{position:relative}
 .shot figcaption{position:absolute; left:14px; right:14px; bottom:14px; padding:12px 16px; border-radius:16px; background:rgba(15,10,31,.78); backdrop-filter:blur(10px); font-size:.9rem; line-height:1.4}
 .shot figcaption b{display:block; font-family:"Unbounded"; font-weight:500; font-size:.95rem; margin-bottom:2px}
 .g-b,.g-c,.g-d{aspect-ratio:3/4}
+.g-d img{object-position:66% 30%}
 .g-a{align-self:stretch}
 .shot figcaption{font-size:.84rem}
 .shot figcaption span{display:block}
@@ -281,6 +282,43 @@ main{overflow-x:clip}
 .cert-link:hover{text-decoration:underline}
 @media (max-width:980px){ .certs{grid-template-columns:1fr 1fr} }
 @media (max-width:600px){ .certs{grid-template-columns:1fr} }
+
+
+/* ---------- impressão / PDF: uma seção por página, em paisagem ---------- */
+@page{size:1440px 900px; margin:0}
+@media print{
+  *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important}
+  html,body{background:var(--night) !important; width:1440px; margin:0}
+  main{overflow:visible}
+  body::after,.nav,.progress,.scroll-hint,.c-blob,.skip,.timeline-ctl,#run-aso,.cert-tabs,.skill-tabs,.marquee,#projetos > .sec-head,.demo-label{display:none !important}
+  .rv{opacity:1 !important; transform:none !important}
+  .wrap{width:1240px}
+  .page{height:900px; overflow:hidden; break-after:page; display:flex; flex-direction:column; justify-content:center; position:relative}
+  .hero{min-height:900px; height:900px}
+  .hero-grid{grid-template-columns:1.1fr .9fr !important; padding:40px 0 !important}
+  .stage{justify-self:end !important; width:520px !important}
+  .stack{padding:0}
+  .proj{position:relative !important; top:auto !important; min-height:0 !important; margin:0 !important; height:900px; align-items:center; break-after:page}
+  .proj .card{grid-template-columns:1fr 1fr !important; transform:none !important; opacity:1 !important; height:820px}
+  .proj .demo{border-left:1px solid var(--line) !important; border-top:0 !important}
+  .card .txt{padding:44px 44px}
+  .screen{height:470px}
+  #bastidores,#destaques,#certificados{height:900px; break-before:page; overflow:hidden}
+  .sec-head{grid-template-columns:1fr 1fr !important; padding:56px 0 26px !important}
+  .sec-head p{justify-self:end !important}
+  .gallery{grid-template-columns:2fr 1fr 1fr 1fr !important}
+  .g-a{grid-column:auto !important; aspect-ratio:auto !important}
+  .gallery .shot{height:600px; aspect-ratio:auto !important}
+  .shot figcaption span{max-height:none !important; opacity:1 !important}
+  .awards{grid-template-columns:repeat(4,1fr) !important}
+  .award{min-height:170px}
+  .two{grid-template-columns:1fr 1fr !important}
+  .certs{grid-template-columns:repeat(3,1fr) !important}
+  .cert.off{display:flex !important}
+  .contact{height:890px; break-after:avoid; break-before:page; padding:60px 0 30px; display:flex; flex-direction:column; justify-content:center; width:1240px}
+  .contact-grid{grid-template-columns:1.2fr .8fr !important}
+  .foot{margin-top:40px}
+}
 
 /* ---------- responsivo ---------- */
 @media (max-width:980px){
@@ -577,7 +615,7 @@ main{overflow-x:clip}
     </div>
   </div>
   <div class="foot">
-    <span>Alan Aquino, São Luís, MA</span>
+    <span>Alan Aquino, São Luís, MA · <a href="https://aaquino0.github.io">aaquino0.github.io</a></span>
     <span>Os projetos pertencem ao Grupo CEUMA. Nenhum dado de aluno, paciente ou funcionário aparece aqui.</span>
   </div>
 </section>
@@ -587,7 +625,7 @@ main{overflow-x:clip}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
 (() => {
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || location.search.includes('static');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || (location.search.includes('static') || location.search.includes('print'));
 const fine = matchMedia('(pointer: fine)').matches;
 const hasGsap = typeof gsap !== 'undefined';
 if (hasGsap && !reduce) document.documentElement.classList.add('js');
@@ -780,6 +818,11 @@ function setSk(k){
 }
 document.querySelectorAll('[data-sk]').forEach(b => b.addEventListener('click', () => setSk(b.dataset.sk)));
 setSk('auto');
+
+/* ---------- impressão: mostra todas as competências ---------- */
+addEventListener('beforeprint', () => { skEl.innerHTML = Object.values(sk).flat().map(x => `<li>${x}</li>`).join(''); });
+addEventListener('afterprint', () => setSk('auto'));
+if (location.search.includes('print')) skEl.innerHTML = Object.values(sk).flat().map(x => `<li>${x}</li>`).join('');
 
 /* ---------- filtro de certificados ---------- */
 document.querySelectorAll('[data-cf]').forEach(b => b.addEventListener('click', () => {
