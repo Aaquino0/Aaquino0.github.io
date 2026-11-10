@@ -640,7 +640,7 @@ function orbit(now){
 requestAnimationFrame(orbit);
 if (fine) hero.addEventListener('pointermove', e => { const r = hero.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5; mxT = px; tiltT = -10 + py * 14; });
 
-/* ---------- mouse: cursor do sistema + luz suave, pulso no clique e "ver" nas fotos ---------- */
+/* ---------- mouse como nó de integração: fios estilo n8n ligam o cursor aos elementos próximos ---------- */
 if (fine && !reduce){
   const tc = document.getElementById('trail'), tx = tc.getContext('2d');
   const ring = document.querySelector('.c-ring'), glow = document.querySelector('.c-glow');
@@ -648,35 +648,92 @@ if (fine && !reduce){
   const root = document.documentElement;
   let tw, th;
   const tsize = () => { const d = Math.min(devicePixelRatio||1, 2); tw = innerWidth; th = innerHeight; tc.width = tw*d; tc.height = th*d; tx.setTransform(d,0,0,d,0,0); };
-  tsize(); addEventListener('resize', tsize);
-  let mx = -300, my = -300, rx = -300, ry = -300, gx = -300, gy = -300, seen = false, ripples = [];
+  tsize();
+  const SEL = '.btn, .nav a, .chips li, .fnode, .award, .shot, .seg, .chip, .bubble button, .box, .sheet-row, .mail';
+  const RANGE = 230, MAXW = 3;
+  let ports = [], dirty = true;
+  const markDirty = () => { dirty = true; };
+  addEventListener('scroll', markDirty, {passive:true}); addEventListener('resize', () => { tsize(); markDirty(); });
+  setInterval(markDirty, 400);
+  function refresh(){
+    ports = [];
+    document.querySelectorAll(SEL).forEach(el => {
+      if (el.hidden || el.closest('[hidden]')) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.bottom < -RANGE || r.top > th + RANGE) return;
+      ports.push({el, r, dyn: el.classList.contains('chip')});
+    });
+    dirty = false;
+  }
+  const wires = new Map();
+  let mx = -999, my = -999, gx = -999, gy = -999, rx = -999, ry = -999, seen = false, lastMove = 0, burst = -1e9, ripples = [];
   addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse') return;
-    mx = e.clientX; my = e.clientY;
-    if (!seen){ seen = true; rx = gx = mx; ry = gy = my; }
+    mx = e.clientX; my = e.clientY; lastMove = performance.now();
+    if (!seen){ seen = true; gx = rx = mx; gy = ry = my; }
     root.classList.add('cursor-on');
   }, {passive:true});
-  document.addEventListener('pointerleave', () => root.classList.remove('cursor-on'));
+  document.addEventListener('pointerleave', () => { root.classList.remove('cursor-on'); mx = my = -999; });
   addEventListener('blur', () => root.classList.remove('cursor-on'));
-  addEventListener('pointerdown', e => ripples.push({x:e.clientX, y:e.clientY, t:performance.now()}));
+  addEventListener('pointerdown', e => { burst = performance.now(); ripples.push({x:e.clientX, y:e.clientY, t:burst}); });
   document.addEventListener('pointerover', e => ring.classList.toggle('view', !!e.target.closest('.tilt')));
   const follow = (k, dt) => 1 - Math.pow(1 - k, dt / 16.667);
+  const bez = (t, a, b, c, d) => { const u = 1 - t; return u*u*u*a + 3*u*u*t*b + 3*u*t*t*c + t*t*t*d; };
   let last = performance.now();
   (function loop(now){
     const dt = Math.min(now - last, 50); last = now;
-    rx += (mx - rx) * follow(.3, dt); ry += (my - ry) * follow(.3, dt);
+    if (dirty) refresh();
     gx += (mx - gx) * follow(.08, dt); gy += (my - gy) * follow(.08, dt);
-    ring.style.transform = `translate3d(${rx}px,${ry}px,0)`;
+    rx += (mx - rx) * follow(.3, dt); ry += (my - ry) * follow(.3, dt);
     glow.style.transform = `translate3d(${gx}px,${gy}px,0)`;
-    if (ripples.length || tc.dataset.dirty){
-      tx.clearRect(0, 0, tw, th); tc.dataset.dirty = '';
-      for (let i = ripples.length - 1; i >= 0; i--){
-        const r = ripples[i], p = (now - r.t) / 480;
-        if (p >= 1){ ripples.splice(i, 1); tc.dataset.dirty = '1'; continue; }
-        const e = 1 - Math.pow(1 - p, 3);
-        tx.strokeStyle = `rgba(94,234,212,${(1 - p) * .5})`; tx.lineWidth = 1.5;
-        tx.beginPath(); tx.arc(r.x, r.y, 6 + e * 22, 0, Math.PI * 2); tx.stroke();
-      }
+    ring.style.transform = `translate3d(${rx}px,${ry}px,0)`;
+    const idle = Math.max(0, Math.min(1, 1 - (now - lastMove - 1400) / 700));
+    // escolhe os elementos mais próximos (sem contar o que está sob o mouse)
+    const cand = [];
+    for (const p of ports){
+      const r = p.dyn ? p.el.getBoundingClientRect() : p.r;
+      const px = Math.max(r.left, Math.min(mx, r.right)), py = Math.max(r.top, Math.min(my, r.bottom));
+      const d = Math.hypot(mx - px, my - py);
+      if (d > 4 && d < RANGE) cand.push({el:p.el, px, py, d});
+    }
+    cand.sort((a, b) => a.d - b.d);
+    const chosen = new Set(cand.slice(0, MAXW).map(c => c.el));
+    for (const c of cand) if (chosen.has(c.el)){
+      let w = wires.get(c.el); if (!w){ w = {a:0, phase:Math.random()}; wires.set(c.el, w); }
+      w.px = c.px; w.py = c.py; w.target = (1 - c.d / RANGE) * idle;
+    }
+    for (const [el, w] of wires){ if (!chosen.has(el)) w.target = 0; }
+    tx.clearRect(0, 0, tw, th);
+    const fast = Math.max(0, 1 - (now - burst) / 600);
+    let any = false;
+    for (const [el, w] of wires){
+      w.a += (w.target - w.a) * follow(.16, dt);
+      if (w.a < .01 && w.target === 0){ wires.delete(el); continue; }
+      any = true;
+      const P = {x:w.px, y:w.py}, M = {x:mx, y:my}, midx = (P.x + M.x) / 2;
+      const c1 = {x:midx, y:P.y}, c2 = {x:midx, y:M.y};
+      const g = tx.createLinearGradient(P.x, P.y, M.x, M.y);
+      g.addColorStop(0, `rgba(139,92,246,${.75*w.a})`); g.addColorStop(1, `rgba(94,234,212,${.9*w.a})`);
+      tx.strokeStyle = g; tx.lineWidth = 1.4 + fast;
+      tx.beginPath(); tx.moveTo(P.x, P.y); tx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, M.x, M.y); tx.stroke();
+      tx.fillStyle = `rgba(185,162,255,${w.a})`; tx.beginPath(); tx.arc(P.x, P.y, 3, 0, Math.PI*2); tx.fill();
+      w.phase = (w.phase + dt / (900 - 600 * fast)) % 1;
+      const t = w.phase, qx = bez(t, P.x, c1.x, c2.x, M.x), qy = bez(t, P.y, c1.y, c2.y, M.y);
+      tx.fillStyle = `rgba(94,234,212,${w.a})`; tx.beginPath(); tx.arc(qx, qy, 2.4, 0, Math.PI*2); tx.fill();
+      tx.fillStyle = `rgba(94,234,212,${.25*w.a})`; tx.beginPath(); tx.arc(qx, qy, 6, 0, Math.PI*2); tx.fill();
+    }
+    if (any && mx > -900){
+      const a = Math.min(1, [...wires.values()].reduce((m, w) => Math.max(m, w.a), 0) * 1.4);
+      tx.strokeStyle = `rgba(94,234,212,${.8*a})`; tx.lineWidth = 1.5;
+      tx.beginPath(); tx.arc(mx, my, 9, 0, Math.PI*2); tx.stroke();
+      tx.fillStyle = `rgba(94,234,212,${.15*a})`; tx.fill();
+    }
+    for (let i = ripples.length - 1; i >= 0; i--){
+      const r = ripples[i], p = (now - r.t) / 520;
+      if (p >= 1){ ripples.splice(i, 1); continue; }
+      const e = 1 - Math.pow(1 - p, 3);
+      tx.strokeStyle = `rgba(94,234,212,${(1 - p) * .55})`; tx.lineWidth = 1.5;
+      tx.beginPath(); tx.arc(r.x, r.y, 9 + e * 26, 0, Math.PI * 2); tx.stroke();
     }
     requestAnimationFrame(loop);
   })(last);
